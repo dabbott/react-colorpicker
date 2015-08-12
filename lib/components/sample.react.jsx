@@ -23,18 +23,24 @@ var Sample = React.createClass({
   },
 
   render: function () {
+    var colors = Colr.fromHex(this.props.color).toRgbArray(),
+        colorString;
+
+    colors.push(this.props.colorOpacity / 100);
+    colorString = 'rgba(' + colors.join(',') + ')';
+
     return (
       /* jshint ignore: start */
       <div className='sample'>
         <div
-          className='current' 
-          style={{background: this.props.color}}
+          className='current'
+          style={{background: colorString}}
         />
-        <div
+        {/*<div
           className='origin'
-          style={{background: this.props.origin}}
+          style={{background: this.props.origin, opacity: this.props.originOpacity / 100}}
           onClick={this.loadOrigin}
-        />
+        />*/}
       </div>
       /* jshint ignore: end */
     );

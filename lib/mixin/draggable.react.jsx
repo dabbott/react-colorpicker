@@ -22,24 +22,15 @@ var DraggableMixin = {
     };
   },
 
-  componentDidMount: function () {
-    document.addEventListener('mousemove', this.handleUpdate);
-    document.addEventListener('touchmove', this.handleUpdate);
-    document.addEventListener('mouseup', this.stopUpdates);
-    document.addEventListener('touchend', this.stopUpdates);
-  },
-
-  componentWillUnmount: function () {
-    document.removeEventListener('mousemove', this.handleUpdate);
-    document.removeEventListener('touchmove', this.handleUpdate);
-    document.removeEventListener('mouseup', this.stopUpdates);
-    document.removeEventListener('touchend', this.stopUpdates);
-  },
-
   startUpdates: function (e) {
     var coords = this.getPosition(e);
     this.setState({ active: true });
     this.updatePosition(coords.x, coords.y);
+
+    document.addEventListener('mousemove', this.handleUpdate);
+    document.addEventListener('touchmove', this.handleUpdate);
+    document.addEventListener('mouseup', this.stopUpdates);
+    document.addEventListener('touchend', this.stopUpdates);
   },
 
   handleUpdate: function (e) {
@@ -53,6 +44,11 @@ var DraggableMixin = {
   stopUpdates: function () {
     if (this.state.active) {
       this.setState({ active: false });
+
+      document.removeEventListener('mousemove', this.handleUpdate);
+      document.removeEventListener('touchmove', this.handleUpdate);
+      document.removeEventListener('mouseup', this.stopUpdates);
+      document.removeEventListener('touchend', this.stopUpdates);
     }
   },
 

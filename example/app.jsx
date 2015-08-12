@@ -10,6 +10,7 @@ var App = React.createClass({
   getInitialState: function () {
     return {
       color: '#000000',
+      opacity: 100
     };
   },
 
@@ -22,13 +23,15 @@ var App = React.createClass({
 
     // replace current color and origin color
     this.setState({
-      color: color.toHex()
+      color: color.toHex(),
+      opacity: Math.round(Math.random() * 100)
     });
   },
 
-  handleChange: function (color) {
+  handleChange: function (color, opacity) {
     this.setState({
-      color: color.toHex()
+      color: color.toHex(),
+      opacity: opacity
     });
   },
 
@@ -37,11 +40,12 @@ var App = React.createClass({
     return (
       <div>
         <button onClick={this.setColor}>Load Random Color</button>
-        <div>Active: {this.state.color}</div>
+        <div>Active: {this.state.color + ' ' + this.state.opacity}</div>
 
         <div id='container'>
           <ColorPicker
             color={this.state.color}
+            opacity={this.state.opacity}
             onChange={this.handleChange}
           />
         </div>

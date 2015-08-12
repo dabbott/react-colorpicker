@@ -47,6 +47,11 @@ var Slider = React.createClass({
     var attr = this.props.vertical ? 'bottom' : 'left';
     styles[attr] = this.getPercentageValue(this.props.value);
 
+    var trackStyles = {};
+    if (this.props.background) {
+      trackStyles.background = this.props.background;
+    }
+
     return (
       /* jshint ignore: start */
       <div
@@ -54,7 +59,7 @@ var Slider = React.createClass({
         onMouseDown={this.startUpdates}
         onTouchStart={this.startUpdates}
       >
-        <div className="track" />
+        <div className="track" style={trackStyles} />
         <div className="pointer" style={styles} />
       </div>
       /* jshint ignore: end */

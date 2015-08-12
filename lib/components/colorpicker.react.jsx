@@ -16,12 +16,14 @@ var ColorPicker = React.createClass({
 
   propTypes: {
     color: React.PropTypes.string,
+    opacity: React.PropTypes.number
   },
 
   // default color
   getDefaultProps: function () {
     return {
-      color: '#000000'
+      color: '#000000',
+      opacity: 100
     };
   },
 
@@ -32,22 +34,26 @@ var ColorPicker = React.createClass({
     var nextColor = nextProps.color.toLowerCase();
     var currentColor = Colr.fromHsvObject(this.state.hsv).toHex();
 
-    if(nextColor !== currentColor) {
-      this.setState(this.getStateFrom(nextProps.color));
+    if (nextColor !== currentColor || nextProps.opacity !== this.state.colorOpacity) {
+      this.setState(this.getStateFrom(nextProps.color, nextProps.opacity,
+          nextProps.opacity));
     }
   },
 
   // create the initial state using props.color
   getInitialState: function () {
-    return this.getStateFrom(this.props.color);
+    return this.getStateFrom(this.props.color, this.props.opacity,
+        this.props.opacity);
   },
 
   // generate state object from a hex string
-  getStateFrom: function (color) {
+  getStateFrom: function (color, colorOpacity, originOpacity) {
     color = Colr.fromHex(color);
     return {
       color: color,
+      colorOpacity: colorOpacity,
       origin: color.clone(),
+      originOpacity: originOpacity,
       hsv: color.toRawHsvObject()
     };
   },
@@ -64,65 +70,75 @@ var ColorPicker = React.createClass({
     return (
       /* jshint ignore: start */
       <div className="colorpicker">
-        <div className="light-slider">
-          <Slider
-            vertical={true}
-            value={this.state.hsv.v}
+        <div className="vbox">
+          <Map
+            x={this.state.hsv.s}
+            y={this.state.hsv.v}
             max={100}
-            onChange={this.setValue}
+            backgroundColor={hue}
+            className={classes}
+            onChange={this.setSaturationAndValue}
           />
+          <div className="hbox">
+            <div className="vbox sliders-container">
+              <div className="hue-slider">
+                <Slider
+                  vertical={false}
+                  value={this.state.hsv.h}
+                  max={360}
+                  onChange={this.setHue}
+                />
+              </div>
+              <div className="opacity-slider">
+                <Slider
+                  vertical={false}
+                  value={this.state.colorOpacity}
+                  max={100}
+                  onChange={this.setOpacity}
+                  background={this.buildOpacityGradient(this.state.color)}
+                />
+              </div>
+            </div>
+            <Sample
+              color={this.state.color.toHex()}
+              colorOpacity={this.state.colorOpacity}
+              origin={this.state.origin.toHex()}
+              originOpacity={this.state.originOpacity}
+              onChange={this.loadColor}
+            />
+          </div>
         </div>
-        <div className="sat-slider">
-          <Slider
-            vertical={false}
-            value={this.state.hsv.s}
-            max={100}
-            onChange={this.setSaturation}
-          />
-        </div>
-        <div className="hue-slider">
-          <Slider
-            vertical={true}
-            value={this.state.hsv.h}
-            max={360}
-            onChange={this.setHue}
-          />
-        </div>
-        <Map
-          x={this.state.hsv.s}
-          y={this.state.hsv.v}
-          max={100}
-          backgroundColor={hue}
-          className={classes}
-          onChange={this.setSaturationAndValue}
-        />
-        <Details
+        {/*<Details
           color={this.state.color}
           hsv={this.state.hsv}
           onChange={this.loadColor}
-        />
-        <Sample
-          color={this.state.color.toHex()}
-          origin={this.state.origin.toHex()}
-          onChange={this.loadColor}
-        />
+        />*/}
         {this.props.children}
       </div>
       /* jshint ignore: end */
     );
   },
 
+  buildOpacityGradient: function (color) {
+    var rgbString = this.state.color.toRgbArray().join(',');
+    return 'linear-gradient(to left,' +
+      'rgba(' + rgbString + ',1) 0%,' +
+      'rgba(' + rgbString + ',0) 100%' +
+    ')';
+  },
+
   // replace current color with another one
-  loadColor: function (color) {
-    this.setState(this.getStateFrom(color));
-    this.props.onChange(Colr.fromHex(color));
+  loadColor: function (color, colorOpacity) {
+    colorOpacity = typeof colorOpacity === 'undefined' ? 100 : colorOpacity;
+    this.setState(this.getStateFrom(color, colorOpacity, colorOpacity));
+    this.props.onChange(Colr.fromHex(color), colorOpacity);
   },
 
   // update the current color using the raw hsv values
   update: function () {
     var color = Colr.fromHsvObject(this.state.hsv);
     this.setState({ color: color });
-    this.props.onChange(color);
+    this.props.onChange(color, this.state.colorOpacity);
   },
 
   // set the hue
@@ -154,6 +170,11 @@ var ColorPicker = React.createClass({
     return Colr.fromHsv(this.state.hsv.h, 100, 100).toHex();
   },
 
+  // set the opacity
+  setOpacity: function (colorOpacity) {
+    this.state.colorOpacity = Math.round(colorOpacity);
+    this.update();
+  }
 
 });
 
