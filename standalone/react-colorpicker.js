@@ -2,7 +2,7 @@
 module.exports = require('./components/colorpicker.react');
 
 
-},{"./components/colorpicker.react":"/Volumes/Home/Projects/react-colorpicker/lib/components/colorpicker.react.jsx"}],"/Volumes/Home/Projects/react-colorpicker/lib/components/colorpicker.react.jsx":[function(require,module,exports){
+},{"./components/colorpicker.react":"/Users/devinabbott/Projects/react-colorpicker/lib/components/colorpicker.react.jsx"}],"/Users/devinabbott/Projects/react-colorpicker/lib/components/colorpicker.react.jsx":[function(require,module,exports){
 'use strict';
 
 var React = require('../util/react');
@@ -21,12 +21,14 @@ var ColorPicker = React.createClass({displayName: "ColorPicker",
 
   propTypes: {
     color: React.PropTypes.string,
+    opacity: React.PropTypes.number
   },
 
   // default color
   getDefaultProps: function () {
     return {
-      color: '#000000'
+      color: '#000000',
+      opacity: 100
     };
   },
 
@@ -37,22 +39,26 @@ var ColorPicker = React.createClass({displayName: "ColorPicker",
     var nextColor = nextProps.color.toLowerCase();
     var currentColor = Colr.fromHsvObject(this.state.hsv).toHex();
 
-    if(nextColor !== currentColor) {
-      this.setState(this.getStateFrom(nextProps.color));
+    if (nextColor !== currentColor || nextProps.opacity !== this.state.colorOpacity) {
+      this.setState(this.getStateFrom(nextProps.color, nextProps.opacity,
+          nextProps.opacity));
     }
   },
 
   // create the initial state using props.color
   getInitialState: function () {
-    return this.getStateFrom(this.props.color);
+    return this.getStateFrom(this.props.color, this.props.opacity,
+        this.props.opacity);
   },
 
   // generate state object from a hex string
-  getStateFrom: function (color) {
+  getStateFrom: function (color, colorOpacity, originOpacity) {
     color = Colr.fromHex(color);
     return {
       color: color,
+      colorOpacity: colorOpacity,
       origin: color.clone(),
+      originOpacity: originOpacity,
       hsv: color.toRawHsvObject()
     };
   },
@@ -69,65 +75,75 @@ var ColorPicker = React.createClass({displayName: "ColorPicker",
     return (
       /* jshint ignore: start */
       React.createElement("div", {className: "colorpicker"}, 
-        React.createElement("div", {className: "light-slider"}, 
-          React.createElement(Slider, {
-            vertical: true, 
-            value: this.state.hsv.v, 
+        React.createElement("div", {className: "vbox"}, 
+          React.createElement(Map, {
+            x: this.state.hsv.s, 
+            y: this.state.hsv.v, 
             max: 100, 
-            onChange: this.setValue}
+            backgroundColor: hue, 
+            className: classes, 
+            onChange: this.setSaturationAndValue}
+          ), 
+          React.createElement("div", {className: "hbox"}, 
+            React.createElement("div", {className: "vbox sliders-container"}, 
+              React.createElement("div", {className: "hue-slider"}, 
+                React.createElement(Slider, {
+                  vertical: false, 
+                  value: this.state.hsv.h, 
+                  max: 360, 
+                  onChange: this.setHue}
+                )
+              ), 
+              React.createElement("div", {className: "opacity-slider"}, 
+                React.createElement(Slider, {
+                  vertical: false, 
+                  value: this.state.colorOpacity, 
+                  max: 100, 
+                  onChange: this.setOpacity, 
+                  background: this.buildOpacityGradient(this.state.color)}
+                )
+              )
+            ), 
+            React.createElement(Sample, {
+              color: this.state.color.toHex(), 
+              colorOpacity: this.state.colorOpacity, 
+              origin: this.state.origin.toHex(), 
+              originOpacity: this.state.originOpacity, 
+              onChange: this.loadColor}
+            )
           )
         ), 
-        React.createElement("div", {className: "sat-slider"}, 
-          React.createElement(Slider, {
-            vertical: false, 
-            value: this.state.hsv.s, 
-            max: 100, 
-            onChange: this.setSaturation}
-          )
-        ), 
-        React.createElement("div", {className: "hue-slider"}, 
-          React.createElement(Slider, {
-            vertical: true, 
-            value: this.state.hsv.h, 
-            max: 360, 
-            onChange: this.setHue}
-          )
-        ), 
-        React.createElement(Map, {
-          x: this.state.hsv.s, 
-          y: this.state.hsv.v, 
-          max: 100, 
-          backgroundColor: hue, 
-          className: classes, 
-          onChange: this.setSaturationAndValue}
-        ), 
-        React.createElement(Details, {
-          color: this.state.color, 
-          hsv: this.state.hsv, 
-          onChange: this.loadColor}
-        ), 
-        React.createElement(Sample, {
-          color: this.state.color.toHex(), 
-          origin: this.state.origin.toHex(), 
-          onChange: this.loadColor}
-        ), 
+        /*<Details
+          color={this.state.color}
+          hsv={this.state.hsv}
+          onChange={this.loadColor}
+        />*/
         this.props.children
       )
       /* jshint ignore: end */
     );
   },
 
+  buildOpacityGradient: function (color) {
+    var rgbString = this.state.color.toRgbArray().join(',');
+    return 'linear-gradient(to left,' +
+      'rgba(' + rgbString + ',1) 0%,' +
+      'rgba(' + rgbString + ',0) 100%' +
+    ')';
+  },
+
   // replace current color with another one
-  loadColor: function (color) {
-    this.setState(this.getStateFrom(color));
-    this.props.onChange(Colr.fromHex(color));
+  loadColor: function (color, colorOpacity) {
+    colorOpacity = typeof colorOpacity === 'undefined' ? 100 : colorOpacity;
+    this.setState(this.getStateFrom(color, colorOpacity, colorOpacity));
+    this.props.onChange(Colr.fromHex(color), colorOpacity);
   },
 
   // update the current color using the raw hsv values
   update: function () {
     var color = Colr.fromHsvObject(this.state.hsv);
     this.setState({ color: color });
-    this.props.onChange(color);
+    this.props.onChange(color, this.state.colorOpacity);
   },
 
   // set the hue
@@ -159,13 +175,18 @@ var ColorPicker = React.createClass({displayName: "ColorPicker",
     return Colr.fromHsv(this.state.hsv.h, 100, 100).toHex();
   },
 
+  // set the opacity
+  setOpacity: function (colorOpacity) {
+    this.state.colorOpacity = Math.round(colorOpacity);
+    this.update();
+  }
 
 });
 
 module.exports = ColorPicker;
 
 
-},{"../mixin/onchange.react":"/Volumes/Home/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/react":"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js","./details.react":"/Volumes/Home/Projects/react-colorpicker/lib/components/details.react.jsx","./map.react":"/Volumes/Home/Projects/react-colorpicker/lib/components/map.react.jsx","./sample.react":"/Volumes/Home/Projects/react-colorpicker/lib/components/sample.react.jsx","./slider.react":"/Volumes/Home/Projects/react-colorpicker/lib/components/slider.react.jsx","classnames":"/Volumes/Home/Projects/react-colorpicker/node_modules/classnames/index.js","colr":"/Volumes/Home/Projects/react-colorpicker/node_modules/colr/index.js"}],"/Volumes/Home/Projects/react-colorpicker/lib/components/details.react.jsx":[function(require,module,exports){
+},{"../mixin/onchange.react":"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/react":"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js","./details.react":"/Users/devinabbott/Projects/react-colorpicker/lib/components/details.react.jsx","./map.react":"/Users/devinabbott/Projects/react-colorpicker/lib/components/map.react.jsx","./sample.react":"/Users/devinabbott/Projects/react-colorpicker/lib/components/sample.react.jsx","./slider.react":"/Users/devinabbott/Projects/react-colorpicker/lib/components/slider.react.jsx","classnames":"/Users/devinabbott/Projects/react-colorpicker/node_modules/classnames/index.js","colr":"/Users/devinabbott/Projects/react-colorpicker/node_modules/colr/index.js"}],"/Users/devinabbott/Projects/react-colorpicker/lib/components/details.react.jsx":[function(require,module,exports){
 'use strict';
 
 var React = require('../util/react');
@@ -272,7 +293,7 @@ var Details = React.createClass({displayName: "Details",
 module.exports = Details;
 
 
-},{"../mixin/onchange.react":"/Volumes/Home/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/react":"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js","./input.react":"/Volumes/Home/Projects/react-colorpicker/lib/components/input.react.jsx","colr":"/Volumes/Home/Projects/react-colorpicker/node_modules/colr/index.js"}],"/Volumes/Home/Projects/react-colorpicker/lib/components/input.react.jsx":[function(require,module,exports){
+},{"../mixin/onchange.react":"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/react":"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js","./input.react":"/Users/devinabbott/Projects/react-colorpicker/lib/components/input.react.jsx","colr":"/Users/devinabbott/Projects/react-colorpicker/node_modules/colr/index.js"}],"/Users/devinabbott/Projects/react-colorpicker/lib/components/input.react.jsx":[function(require,module,exports){
 'use strict';
 
 var React = require('../util/react');
@@ -348,7 +369,7 @@ var Input = React.createClass({displayName: "Input",
 module.exports = Input;
 
 
-},{"../mixin/onchange.react":"/Volumes/Home/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/react":"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js","colr":"/Volumes/Home/Projects/react-colorpicker/node_modules/colr/index.js"}],"/Volumes/Home/Projects/react-colorpicker/lib/components/map.react.jsx":[function(require,module,exports){
+},{"../mixin/onchange.react":"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/react":"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js","colr":"/Users/devinabbott/Projects/react-colorpicker/node_modules/colr/index.js"}],"/Users/devinabbott/Projects/react-colorpicker/lib/components/map.react.jsx":[function(require,module,exports){
 'use strict';
 
 var React = require('../util/react');
@@ -417,7 +438,7 @@ var Map = React.createClass({displayName: "Map",
 module.exports = Map;
 
 
-},{"../mixin/draggable.react":"/Volumes/Home/Projects/react-colorpicker/lib/mixin/draggable.react.jsx","../mixin/onchange.react":"/Volumes/Home/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/clamp":"/Volumes/Home/Projects/react-colorpicker/lib/util/clamp.js","../util/react":"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js","classnames":"/Volumes/Home/Projects/react-colorpicker/node_modules/classnames/index.js","colr":"/Volumes/Home/Projects/react-colorpicker/node_modules/colr/index.js","react/lib/ReactComponentWithPureRenderMixin":"/Volumes/Home/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js"}],"/Volumes/Home/Projects/react-colorpicker/lib/components/sample.react.jsx":[function(require,module,exports){
+},{"../mixin/draggable.react":"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/draggable.react.jsx","../mixin/onchange.react":"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/clamp":"/Users/devinabbott/Projects/react-colorpicker/lib/util/clamp.js","../util/react":"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js","classnames":"/Users/devinabbott/Projects/react-colorpicker/node_modules/classnames/index.js","colr":"/Users/devinabbott/Projects/react-colorpicker/node_modules/colr/index.js","react/lib/ReactComponentWithPureRenderMixin":"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js"}],"/Users/devinabbott/Projects/react-colorpicker/lib/components/sample.react.jsx":[function(require,module,exports){
 'use strict';
 
 var React = require('../util/react');
@@ -443,18 +464,24 @@ var Sample = React.createClass({displayName: "Sample",
   },
 
   render: function () {
+    var colors = Colr.fromHex(this.props.color).toRgbArray(),
+        colorString;
+
+    colors.push(this.props.colorOpacity / 100);
+    colorString = 'rgba(' + colors.join(',') + ')';
+
     return (
       /* jshint ignore: start */
       React.createElement("div", {className: "sample"}, 
         React.createElement("div", {
           className: "current", 
-          style: {background: this.props.color}}
-        ), 
-        React.createElement("div", {
-          className: "origin", 
-          style: {background: this.props.origin}, 
-          onClick: this.loadOrigin}
+          style: {background: colorString}}
         )
+        /*<div
+          className='origin'
+          style={{background: this.props.origin, opacity: this.props.originOpacity / 100}}
+          onClick={this.loadOrigin}
+        />*/
       )
       /* jshint ignore: end */
     );
@@ -465,7 +492,7 @@ var Sample = React.createClass({displayName: "Sample",
 module.exports = Sample;
 
 
-},{"../mixin/onchange.react":"/Volumes/Home/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/react":"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js","colr":"/Volumes/Home/Projects/react-colorpicker/node_modules/colr/index.js","react/lib/ReactComponentWithPureRenderMixin":"/Volumes/Home/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js"}],"/Volumes/Home/Projects/react-colorpicker/lib/components/slider.react.jsx":[function(require,module,exports){
+},{"../mixin/onchange.react":"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/react":"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js","colr":"/Users/devinabbott/Projects/react-colorpicker/node_modules/colr/index.js","react/lib/ReactComponentWithPureRenderMixin":"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js"}],"/Users/devinabbott/Projects/react-colorpicker/lib/components/slider.react.jsx":[function(require,module,exports){
 'use strict';
 
 var React = require('../util/react');
@@ -515,6 +542,11 @@ var Slider = React.createClass({displayName: "Slider",
     var attr = this.props.vertical ? 'bottom' : 'left';
     styles[attr] = this.getPercentageValue(this.props.value);
 
+    var trackStyles = {};
+    if (this.props.background) {
+      trackStyles.background = this.props.background;
+    }
+
     return (
       /* jshint ignore: start */
       React.createElement("div", {
@@ -522,7 +554,7 @@ var Slider = React.createClass({displayName: "Slider",
         onMouseDown: this.startUpdates, 
         onTouchStart: this.startUpdates
       }, 
-        React.createElement("div", {className: "track"}), 
+        React.createElement("div", {className: "track", style: trackStyles}), 
         React.createElement("div", {className: "pointer", style: styles})
       )
       /* jshint ignore: end */
@@ -534,7 +566,7 @@ var Slider = React.createClass({displayName: "Slider",
 module.exports = Slider;
 
 
-},{"../mixin/draggable.react":"/Volumes/Home/Projects/react-colorpicker/lib/mixin/draggable.react.jsx","../mixin/onchange.react":"/Volumes/Home/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/clamp":"/Volumes/Home/Projects/react-colorpicker/lib/util/clamp.js","../util/react":"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js","classnames":"/Volumes/Home/Projects/react-colorpicker/node_modules/classnames/index.js","react/lib/ReactComponentWithPureRenderMixin":"/Volumes/Home/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js"}],"/Volumes/Home/Projects/react-colorpicker/lib/mixin/draggable.react.jsx":[function(require,module,exports){
+},{"../mixin/draggable.react":"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/draggable.react.jsx","../mixin/onchange.react":"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/onchange.react.jsx","../util/clamp":"/Users/devinabbott/Projects/react-colorpicker/lib/util/clamp.js","../util/react":"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js","classnames":"/Users/devinabbott/Projects/react-colorpicker/node_modules/classnames/index.js","react/lib/ReactComponentWithPureRenderMixin":"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js"}],"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/draggable.react.jsx":[function(require,module,exports){
 'use strict';
 
 var React = require('../util/react');
@@ -559,24 +591,15 @@ var DraggableMixin = {
     };
   },
 
-  componentDidMount: function () {
-    document.addEventListener('mousemove', this.handleUpdate);
-    document.addEventListener('touchmove', this.handleUpdate);
-    document.addEventListener('mouseup', this.stopUpdates);
-    document.addEventListener('touchend', this.stopUpdates);
-  },
-
-  componentWillUnmount: function () {
-    document.removeEventListener('mousemove', this.handleUpdate);
-    document.removeEventListener('touchmove', this.handleUpdate);
-    document.removeEventListener('mouseup', this.stopUpdates);
-    document.removeEventListener('touchend', this.stopUpdates);
-  },
-
   startUpdates: function (e) {
     var coords = this.getPosition(e);
     this.setState({ active: true });
     this.updatePosition(coords.x, coords.y);
+
+    document.addEventListener('mousemove', this.handleUpdate);
+    document.addEventListener('touchmove', this.handleUpdate);
+    document.addEventListener('mouseup', this.stopUpdates);
+    document.addEventListener('touchend', this.stopUpdates);
   },
 
   handleUpdate: function (e) {
@@ -590,6 +613,11 @@ var DraggableMixin = {
   stopUpdates: function () {
     if (this.state.active) {
       this.setState({ active: false });
+
+      document.removeEventListener('mousemove', this.handleUpdate);
+      document.removeEventListener('touchmove', this.handleUpdate);
+      document.removeEventListener('mouseup', this.stopUpdates);
+      document.removeEventListener('touchend', this.stopUpdates);
     }
   },
 
@@ -617,7 +645,7 @@ var DraggableMixin = {
 module.exports = DraggableMixin;
 
 
-},{"../util/clamp":"/Volumes/Home/Projects/react-colorpicker/lib/util/clamp.js","../util/react":"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js"}],"/Volumes/Home/Projects/react-colorpicker/lib/mixin/onchange.react.jsx":[function(require,module,exports){
+},{"../util/clamp":"/Users/devinabbott/Projects/react-colorpicker/lib/util/clamp.js","../util/react":"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js"}],"/Users/devinabbott/Projects/react-colorpicker/lib/mixin/onchange.react.jsx":[function(require,module,exports){
 'use strict';
 
 var React = require('../util/react');
@@ -640,7 +668,7 @@ var OnChangeMixin = {
 module.exports = OnChangeMixin;
 
 
-},{"../util/react":"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js"}],"/Volumes/Home/Projects/react-colorpicker/lib/util/clamp.js":[function(require,module,exports){
+},{"../util/react":"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js"}],"/Users/devinabbott/Projects/react-colorpicker/lib/util/clamp.js":[function(require,module,exports){
 function clamp (val, min, max) {
   return val < min ? min : (val > max ? max : val);
 }
@@ -648,7 +676,7 @@ function clamp (val, min, max) {
 module.exports = clamp;
 
 
-},{}],"/Volumes/Home/Projects/react-colorpicker/lib/util/react.js":[function(require,module,exports){
+},{}],"/Users/devinabbott/Projects/react-colorpicker/lib/util/react.js":[function(require,module,exports){
 if ((typeof window !== 'undefined') && (typeof window.React !== 'undefined')) {
   module.exports = window.React;
 } else {
@@ -656,12 +684,11 @@ if ((typeof window !== 'undefined') && (typeof window.React !== 'undefined')) {
 }
 
 
-},{"react":false}],"/Volumes/Home/Projects/react-colorpicker/node_modules/classnames/index.js":[function(require,module,exports){
-/*
+},{"react":false}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/classnames/index.js":[function(require,module,exports){
+/*!
   Copyright (c) 2015 Jed Watson.
-  
   Licensed under the MIT License (MIT), see
-  https://github.com/JedWatson/classnames/blob/master/LICENSE
+  http://jedwatson.github.io/classnames
 */
 
 function classNames() {
@@ -702,7 +729,7 @@ if (typeof define !== 'undefined' && define.amd) {
 	});
 }
 
-},{}],"/Volumes/Home/Projects/react-colorpicker/node_modules/colr/index.js":[function(require,module,exports){
+},{}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/colr/index.js":[function(require,module,exports){
 'use strict';
 
 
@@ -1068,7 +1095,7 @@ function clampHsx (h, s, x) {
 
 module.exports = Colr;
 
-},{"colr-convert":"/Volumes/Home/Projects/react-colorpicker/node_modules/colr/node_modules/colr-convert/index.js"}],"/Volumes/Home/Projects/react-colorpicker/node_modules/colr/node_modules/colr-convert/index.js":[function(require,module,exports){
+},{"colr-convert":"/Users/devinabbott/Projects/react-colorpicker/node_modules/colr/node_modules/colr-convert/index.js"}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/colr/node_modules/colr-convert/index.js":[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -1196,7 +1223,7 @@ function rgb2hsv(rgb) {
   if (max === 0) {
     s = 0;
   } else {
-    s = (delta / max * 1000) / 10;
+    s = delta / max * 100;
   }
 
   if (max === min) {
@@ -1215,7 +1242,7 @@ function rgb2hsv(rgb) {
     h += 360;
   }
 
-  v = ((max / 255) * 1000) / 10;
+  v = (max / 255) * 100;
 
   return [h, s, v];
 }
@@ -1345,7 +1372,7 @@ function rgb2grayscale (rgb) {
   return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
 }
 
-},{}],"/Volumes/Home/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js":[function(require,module,exports){
+},{}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js":[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -1354,12 +1381,12 @@ function rgb2grayscale (rgb) {
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
-* @providesModule ReactComponentWithPureRenderMixin
-*/
+ * @providesModule ReactComponentWithPureRenderMixin
+ */
 
 'use strict';
 
-var shallowEqual = require("./shallowEqual");
+var shallowCompare = require('./shallowCompare');
 
 /**
  * If your React component's render function is "pure", e.g. it will render the
@@ -1386,15 +1413,38 @@ var shallowEqual = require("./shallowEqual");
  * use `forceUpdate()` when you know deep data structures have changed.
  */
 var ReactComponentWithPureRenderMixin = {
-  shouldComponentUpdate: function(nextProps, nextState) {
-    return !shallowEqual(this.props, nextProps) ||
-           !shallowEqual(this.state, nextState);
+  shouldComponentUpdate: function (nextProps, nextState) {
+    return shallowCompare(this, nextProps, nextState);
   }
 };
 
 module.exports = ReactComponentWithPureRenderMixin;
+},{"./shallowCompare":"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/shallowCompare.js"}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/shallowCompare.js":[function(require,module,exports){
+/**
+ * Copyright 2013-2015, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+* @providesModule shallowCompare
+*/
 
-},{"./shallowEqual":"/Volumes/Home/Projects/react-colorpicker/node_modules/react/lib/shallowEqual.js"}],"/Volumes/Home/Projects/react-colorpicker/node_modules/react/lib/shallowEqual.js":[function(require,module,exports){
+'use strict';
+
+var shallowEqual = require('fbjs/lib/shallowEqual');
+
+/**
+ * Does a shallow comparison for props and state.
+ * See ReactComponentWithPureRenderMixin
+ */
+function shallowCompare(instance, nextProps, nextState) {
+  return !shallowEqual(instance.props, nextProps) || !shallowEqual(instance.state, nextState);
+}
+
+module.exports = shallowCompare;
+},{"fbjs/lib/shallowEqual":"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/node_modules/fbjs/lib/shallowEqual.js"}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/node_modules/fbjs/lib/shallowEqual.js":[function(require,module,exports){
 /**
  * Copyright 2013-2015, Facebook, Inc.
  * All rights reserved.
@@ -1404,39 +1454,46 @@ module.exports = ReactComponentWithPureRenderMixin;
  * of patent rights can be found in the PATENTS file in the same directory.
  *
  * @providesModule shallowEqual
+ * @typechecks
+ * 
  */
 
 'use strict';
 
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
 /**
- * Performs equality by iterating through keys on an object and returning
- * false when any key has values which are not strictly equal between
- * objA and objB. Returns true when the values of all keys are strictly equal.
- *
- * @return {boolean}
+ * Performs equality by iterating through keys on an object and returning false
+ * when any key has values which are not strictly equal between the arguments.
+ * Returns true when the values of all keys are strictly equal.
  */
 function shallowEqual(objA, objB) {
   if (objA === objB) {
     return true;
   }
-  var key;
+
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
+    return false;
+  }
+
+  var keysA = Object.keys(objA);
+  var keysB = Object.keys(objB);
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+
   // Test for A's keys different from B.
-  for (key in objA) {
-    if (objA.hasOwnProperty(key) &&
-        (!objB.hasOwnProperty(key) || objA[key] !== objB[key])) {
+  var bHasOwnProperty = hasOwnProperty.bind(objB);
+  for (var i = 0; i < keysA.length; i++) {
+    if (!bHasOwnProperty(keysA[i]) || objA[keysA[i]] !== objB[keysA[i]]) {
       return false;
     }
   }
-  // Test for B's keys missing from A.
-  for (key in objB) {
-    if (objB.hasOwnProperty(key) && !objA.hasOwnProperty(key)) {
-      return false;
-    }
-  }
+
   return true;
 }
 
 module.exports = shallowEqual;
-
 },{}]},{},["./lib/index.js"])("./lib/index.js")
 });

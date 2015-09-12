@@ -3,7 +3,7 @@ var React = require('react');
 var ColorPicker = require('../lib/index');
 
 window.React = React;
-React.initializeTouchEvents(true);
+// React.initializeTouchEvents(true);
 
 var App = React.createClass({
 
