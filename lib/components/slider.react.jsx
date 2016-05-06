@@ -1,6 +1,7 @@
 'use strict';
 
 var React = require('../util/react');
+var ReactDOM = require('../util/react-dom');
 var PureRenderMixin = require('react/lib/ReactComponentWithPureRenderMixin');
 var classnames = require('classnames');
 
@@ -22,7 +23,7 @@ var Slider = React.createClass({
   },
 
   updatePosition: function (clientX, clientY) {
-    var el = this.getDOMNode();
+    var el = ReactDOM.findDOMNode(this.refs.root);
     var rect = el.getBoundingClientRect();
 
     var value;
@@ -58,6 +59,7 @@ var Slider = React.createClass({
         className={classes}
         onMouseDown={this.startUpdates}
         onTouchStart={this.startUpdates}
+        ref={'root'}
       >
         <div className="track" style={trackStyles} />
         <div className="pointer" style={styles} />
