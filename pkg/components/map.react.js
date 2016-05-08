@@ -1,6 +1,7 @@
 'use strict';
 
 var React = require('../util/react');
+var ReactDOM = require('../util/react-dom');
 var Colr = require('colr');
 var PureRenderMixin = require('react/lib/ReactComponentWithPureRenderMixin');
 var classnames = require('classnames');
@@ -24,7 +25,8 @@ var Map = React.createClass({displayName: "Map",
   },
 
   updatePosition: function (clientX, clientY) {
-    var rect = this.getDOMNode().getBoundingClientRect();
+    var el = ReactDOM.findDOMNode(this.refs.root);
+    var rect = el.getBoundingClientRect();
     var x = (clientX - rect.left) / rect.width;
     var y = (rect.bottom - clientY) / rect.height;
 
@@ -47,7 +49,8 @@ var Map = React.createClass({displayName: "Map",
       React.createElement("div", {
         className: classes, 
         onMouseDown: this.startUpdates, 
-        onTouchStart: this.startUpdates
+        onTouchStart: this.startUpdates, 
+        ref: 'root'
       }, 
         React.createElement("div", {className: "background", style: {
           backgroundColor: this.props.backgroundColor
