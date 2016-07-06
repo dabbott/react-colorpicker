@@ -22,7 +22,7 @@ var Slider = React.createClass({displayName: "Slider",
   },
 
   updatePosition: function (clientX, clientY) {
-    var el = this.getDOMNode();
+    var el = this.refs.root;
     var rect = el.getBoundingClientRect();
 
     var value;
@@ -55,6 +55,7 @@ var Slider = React.createClass({displayName: "Slider",
     return (
       /* jshint ignore: start */
       React.createElement("div", {
+        ref: 'root', 
         className: classes, 
         onMouseDown: this.startUpdates, 
         onTouchStart: this.startUpdates

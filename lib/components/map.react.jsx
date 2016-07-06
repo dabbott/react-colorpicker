@@ -24,7 +24,7 @@ var Map = React.createClass({
   },
 
   updatePosition: function (clientX, clientY) {
-    var rect = this.getDOMNode().getBoundingClientRect();
+    var rect = this.refs.root.getBoundingClientRect();
     var x = (clientX - rect.left) / rect.width;
     var y = (rect.bottom - clientY) / rect.height;
 
@@ -45,6 +45,7 @@ var Map = React.createClass({
     return (
       /* jshint ignore: start */
       <div
+        ref={'root'}
         className={classes}
         onMouseDown={this.startUpdates}
         onTouchStart={this.startUpdates}

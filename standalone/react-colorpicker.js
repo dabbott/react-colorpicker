@@ -396,7 +396,7 @@ var Map = React.createClass({displayName: "Map",
   },
 
   updatePosition: function (clientX, clientY) {
-    var rect = this.getDOMNode().getBoundingClientRect();
+    var rect = this.refs.root.getBoundingClientRect();
     var x = (clientX - rect.left) / rect.width;
     var y = (rect.bottom - clientY) / rect.height;
 
@@ -417,6 +417,7 @@ var Map = React.createClass({displayName: "Map",
     return (
       /* jshint ignore: start */
       React.createElement("div", {
+        ref: 'root', 
         className: classes, 
         onMouseDown: this.startUpdates, 
         onTouchStart: this.startUpdates
@@ -517,7 +518,7 @@ var Slider = React.createClass({displayName: "Slider",
   },
 
   updatePosition: function (clientX, clientY) {
-    var el = this.getDOMNode();
+    var el = this.refs.root;
     var rect = el.getBoundingClientRect();
 
     var value;
@@ -550,6 +551,7 @@ var Slider = React.createClass({displayName: "Slider",
     return (
       /* jshint ignore: start */
       React.createElement("div", {
+        ref: 'root', 
         className: classes, 
         onMouseDown: this.startUpdates, 
         onTouchStart: this.startUpdates
@@ -1372,9 +1374,76 @@ function rgb2grayscale (rgb) {
   return (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
 }
 
+},{}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/fbjs/lib/shallowEqual.js":[function(require,module,exports){
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *
+ * @typechecks
+ * 
+ */
+
+/*eslint-disable no-self-compare */
+
+'use strict';
+
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+/**
+ * inlined Object.is polyfill to avoid requiring consumers ship their own
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+ */
+function is(x, y) {
+  // SameValue algorithm
+  if (x === y) {
+    // Steps 1-5, 7-10
+    // Steps 6.b-6.e: +0 != -0
+    return x !== 0 || 1 / x === 1 / y;
+  } else {
+    // Step 6.a: NaN == NaN
+    return x !== x && y !== y;
+  }
+}
+
+/**
+ * Performs equality by iterating through keys on an object and returning false
+ * when any key has values which are not strictly equal between the arguments.
+ * Returns true when the values of all keys are strictly equal.
+ */
+function shallowEqual(objA, objB) {
+  if (is(objA, objB)) {
+    return true;
+  }
+
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
+    return false;
+  }
+
+  var keysA = Object.keys(objA);
+  var keysB = Object.keys(objB);
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+
+  // Test for A's keys different from B.
+  for (var i = 0; i < keysA.length; i++) {
+    if (!hasOwnProperty.call(objB, keysA[i]) || !is(objA[keysA[i]], objB[keysA[i]])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+module.exports = shallowEqual;
 },{}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/ReactComponentWithPureRenderMixin.js":[function(require,module,exports){
 /**
- * Copyright 2013-2015, Facebook, Inc.
+ * Copyright 2013-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -1390,7 +1459,7 @@ var shallowCompare = require('./shallowCompare');
 
 /**
  * If your React component's render function is "pure", e.g. it will render the
- * same result given the same props and state, provide this Mixin for a
+ * same result given the same props and state, provide this mixin for a
  * considerable performance boost.
  *
  * Most React components have pure render functions.
@@ -1411,6 +1480,8 @@ var shallowCompare = require('./shallowCompare');
  * complex data structures this mixin may have false-negatives for deeper
  * differences. Only mixin to components which have simple props and state, or
  * use `forceUpdate()` when you know deep data structures have changed.
+ *
+ * See https://facebook.github.io/react/docs/pure-render-mixin.html
  */
 var ReactComponentWithPureRenderMixin = {
   shouldComponentUpdate: function (nextProps, nextState) {
@@ -1421,7 +1492,7 @@ var ReactComponentWithPureRenderMixin = {
 module.exports = ReactComponentWithPureRenderMixin;
 },{"./shallowCompare":"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/shallowCompare.js"}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/lib/shallowCompare.js":[function(require,module,exports){
 /**
- * Copyright 2013-2015, Facebook, Inc.
+ * Copyright 2013-present, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -1438,62 +1509,12 @@ var shallowEqual = require('fbjs/lib/shallowEqual');
 /**
  * Does a shallow comparison for props and state.
  * See ReactComponentWithPureRenderMixin
+ * See also https://facebook.github.io/react/docs/shallow-compare.html
  */
 function shallowCompare(instance, nextProps, nextState) {
   return !shallowEqual(instance.props, nextProps) || !shallowEqual(instance.state, nextState);
 }
 
 module.exports = shallowCompare;
-},{"fbjs/lib/shallowEqual":"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/node_modules/fbjs/lib/shallowEqual.js"}],"/Users/devinabbott/Projects/react-colorpicker/node_modules/react/node_modules/fbjs/lib/shallowEqual.js":[function(require,module,exports){
-/**
- * Copyright 2013-2015, Facebook, Inc.
- * All rights reserved.
- *
- * This source code is licensed under the BSD-style license found in the
- * LICENSE file in the root directory of this source tree. An additional grant
- * of patent rights can be found in the PATENTS file in the same directory.
- *
- * @providesModule shallowEqual
- * @typechecks
- * 
- */
-
-'use strict';
-
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-
-/**
- * Performs equality by iterating through keys on an object and returning false
- * when any key has values which are not strictly equal between the arguments.
- * Returns true when the values of all keys are strictly equal.
- */
-function shallowEqual(objA, objB) {
-  if (objA === objB) {
-    return true;
-  }
-
-  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
-    return false;
-  }
-
-  var keysA = Object.keys(objA);
-  var keysB = Object.keys(objB);
-
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
-
-  // Test for A's keys different from B.
-  var bHasOwnProperty = hasOwnProperty.bind(objB);
-  for (var i = 0; i < keysA.length; i++) {
-    if (!bHasOwnProperty(keysA[i]) || objA[keysA[i]] !== objB[keysA[i]]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-module.exports = shallowEqual;
-},{}]},{},["./lib/index.js"])("./lib/index.js")
+},{"fbjs/lib/shallowEqual":"/Users/devinabbott/Projects/react-colorpicker/node_modules/fbjs/lib/shallowEqual.js"}]},{},["./lib/index.js"])("./lib/index.js")
 });
